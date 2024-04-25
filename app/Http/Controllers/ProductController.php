@@ -210,13 +210,14 @@ class ProductController extends Controller
     {
         try {
             //商品を削除
-            $product -> delete();
-
+            $product->delete();
+    
             //処理後、商品一覧画面へ戻る
-            return redirect('/products');
+            return redirect('/products')->with('success', '商品が削除されました。');
         } catch (\Exception $e) {
             // エラーが発生した場合の処理
             return back()->withError($e->getMessage())->withInput();
         }
     }
+    
 }

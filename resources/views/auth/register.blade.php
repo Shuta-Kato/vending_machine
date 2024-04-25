@@ -66,6 +66,7 @@
                                 <button type="submit" class="btn btn-primary">
                                     {{ __('登録') }}
                                 </button>
+                                <a href="{{ route('login') }}" class="btn btn-primary">戻る</a>
                             </div>
                         </div>
                     </form>
