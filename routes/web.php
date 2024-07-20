@@ -61,6 +61,16 @@ Route::middleware('auth')->group(function () {
 
     // 商品を削除するためのルート
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    
+    //商品を検索するためのルート（非同期）
+    Route::get('/products/{product}/search' , [ProductController::class, 'search'])->name('products.search');
+
+
 });
+
+
+
+
+
 
 

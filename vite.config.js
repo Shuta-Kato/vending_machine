@@ -7,6 +7,7 @@ export default defineConfig({
             input: [
                 'resources/sass/app.scss',
                 'resources/js/app.js',
+                'public/js/product-search.js',
             ],
             refresh: true,
         }),

@@ -22,19 +22,54 @@ class ProductController extends Controller
        
 
             // 商品名の検索キーワードがある場合、そのキーワードを含む商品をクエリに追加
-            if($search = $request->search){
-                $query->where('product_name', 'LIKE', "%{$search}%");
-            }
+            // if($search = $request->search){
+            //     $query->where('product_name', 'LIKE', "%{$search}%");
+            // }
 
             //会社名の取得
             $companies = Company::all();
 
             $company_id = $request->company;
 
-            if($company_id){ 
-                $query->where('company_id', $company_id);
+            // if($company_id){ 
+            //     $query->where('company_id', $company_id);
+            // }
+
+            //下限価格が指定されている場合、その価格以上の商品をクエリに追加
+            // if($min_price = $request->min_price){
+            //     $query->where('price','>=',$min_price);
+            // }
+
+            // //上限価格が指定されている場合、その価格以下の商品をクエリに追加
+            // if($max_price = $request->max_price){
+            //     $query->where('price','<=',$max_price);
+            // }
+
+            // //下限在庫が指定されている場合、その価格以上の商品をクエリに追加
+            // if($min_stock = $request->min_stock){
+            //     $query->where('stock','>=',$min_stock);
+            // }
+
+            // //上限在庫が指定されている場合、その価格以下の商品をクエリに追加
+            // if($max_stock = $request->max_stock){
+            //     $query->where('stock','<=',$max_stock);
+            // }
+
+            //ソートのパラメータが指定されている場合、そのカラムでソートを行う
+            if($sort = $request->sort){
+                $direction = $request->direction == 'desc' ? 'desc' : 'asc';
+
+                //ソートするカラムがcompany_nameかどうかを確認する
+                if($sort === 'company_name'){
+                    //companiesテーブルと結合し、company_nameでソート
+                    $query->join('companies', 'products.company_id', '=', 'companies.id')
+                    ->select('products.*', 'companies.company_name')
+                    ->orderBy('companies.company_name', $direction);
+                }else{
+                //他のカラムでソート
+                $query->orderBy($sort, $direction);
             }
-            
+        }
         
             // 上記の条件(クエリ）に基づいて商品を取得し、10件ごとのページネーションを適用
             $products = $query->paginate(10);
@@ -209,15 +244,65 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         try {
-            //商品を削除
+            // 商品に関連するsalesデータを削除
+            $product->sales()->delete(); 
+    
+            // 商品を削除
             $product->delete();
     
-            //処理後、商品一覧画面へ戻る
-            return redirect('/products')->with('success', '商品が削除されました。');
+            // JSONレスポンスを返す
+            return response()->json(['success' => '商品が削除されました。']);
         } catch (\Exception $e) {
             // エラーが発生した場合の処理
-            return back()->withError($e->getMessage())->withInput();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     
-}
+    
+    //検索機能の非同期処理化のためにserchメソッドを追加
+    public function search(Request $request, Product $product)
+    {
+        \Log::info('Search method called.');
+        try {
+            
+            $companies = Company::all();
+            $company_id = $request->company;
+            $query = Product::query();
+            
+            // 検索条件の適用
+            if ($search = $request->input('search')) {
+                $query->where('product_name', 'LIKE', "%{$search}%");
+            }
+    
+            if ($company_id = $request->input('company')) {
+                $query->where('company_id', $company_id);
+            }
+    
+            if ($min_price = $request->input('min_price')) {
+                $query->where('price', '>=', $min_price);
+            }
+    
+            if ($max_price = $request->input('max_price')) {
+                $query->where('price', '<=', $max_price);
+            }
+    
+            if ($min_stock = $request->input('min_stock')) {
+                $query->where('stock', '>=', $min_stock);
+            }
+    
+            if ($max_stock = $request->input('max_stock')) {
+                $query->where('stock', '<=', $max_stock);
+            }
+    
+            // 関連する会社情報をロードし、ページネーションを適用して10件ごとに結果を取得
+            $products = $query->with('company')->paginate(10);
+    
+            // JSONで結果を返す
+            return response()->json(['products' => $products]);
+    
+        } catch (\Exception $e) {
+            // エラーが発生した場合の処理
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    }
