@@ -17,65 +17,65 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            // Productモデルに基づいてクエリビルダを初期化
+            // クエリビルダーを初期化
             $query = Product::query();
-       
-
-            // 商品名の検索キーワードがある場合、そのキーワードを含む商品をクエリに追加
-            // if($search = $request->search){
-            //     $query->where('product_name', 'LIKE', "%{$search}%");
-            // }
-
-            //会社名の取得
             $companies = Company::all();
 
-            $company_id = $request->company;
-
-            // if($company_id){ 
-            //     $query->where('company_id', $company_id);
-            // }
-
-            //下限価格が指定されている場合、その価格以上の商品をクエリに追加
-            // if($min_price = $request->min_price){
-            //     $query->where('price','>=',$min_price);
-            // }
-
-            // //上限価格が指定されている場合、その価格以下の商品をクエリに追加
-            // if($max_price = $request->max_price){
-            //     $query->where('price','<=',$max_price);
-            // }
-
-            // //下限在庫が指定されている場合、その価格以上の商品をクエリに追加
-            // if($min_stock = $request->min_stock){
-            //     $query->where('stock','>=',$min_stock);
-            // }
-
-            // //上限在庫が指定されている場合、その価格以下の商品をクエリに追加
-            // if($max_stock = $request->max_stock){
-            //     $query->where('stock','<=',$max_stock);
-            // }
-
-            //ソートのパラメータが指定されている場合、そのカラムでソートを行う
-            if($sort = $request->sort){
-                $direction = $request->direction == 'desc' ? 'desc' : 'asc';
-
-                //ソートするカラムがcompany_nameかどうかを確認する
-                if($sort === 'company_name'){
-                    //companiesテーブルと結合し、company_nameでソート
-                    $query->join('companies', 'products.company_id', '=', 'companies.id')
-                    ->select('products.*', 'companies.company_name')
-                    ->orderBy('companies.company_name', $direction);
-                }else{
-                //他のカラムでソート
-                $query->orderBy($sort, $direction);
+            // 検索条件の適用
+            if ($search = $request->input('search')) {
+                $query->where('product_name', 'LIKE', "%{$search}%");
             }
-        }
-        
-            // 上記の条件(クエリ）に基づいて商品を取得し、10件ごとのページネーションを適用
-            $products = $query->paginate(10);
-        
-            // 商品一覧ビューを表示し、取得した商品情報をビューに渡す
-            return view('products.index', ['products' => $products, 'companies' => $companies]);
+
+            if ($company_id = $request->input('company')) {
+                $query->where('company_id', $company_id);
+            }
+
+            if ($min_price = $request->input('min_price')) {
+                $query->where('price', '>=', $min_price);
+            }
+
+            if ($max_price = $request->input('max_price')) {
+                $query->where('price', '<=', $max_price);
+            }
+
+            if ($min_stock = $request->input('min_stock')) {
+                $query->where('stock', '>=', $min_stock);
+            }
+
+            if ($max_stock = $request->input('max_stock')) {
+                $query->where('stock', '<=', $max_stock);
+            }
+
+            // ソート条件の取得
+            $sortBy = $request->input('sort_by', 'id'); // デフォルトは'id'
+            $sortOrder = $request->input('sort_order', 'asc'); // デフォルトは昇順
+
+            // ソート条件の適用
+            if ($sortBy === 'company_name') {
+                // リレーションシップを使用して会社名でソート
+                $query->join('companies', 'products.company_id', '=', 'companies.id')
+                    ->orderBy('companies.company_name', $sortOrder)
+                    ->select('products.*', 'companies.company_name'); // 必要なカラムだけ選択;
+                    
+            } else {
+                // 他のカラムでソート
+                $query->orderBy($sortBy, $sortOrder);
+            }    
+
+            // AJAXリクエストかどうかをチェック
+            if ($request->ajax()) {
+                $products = $query->with('company')->paginate(10);
+
+                // JSON形式でレスポンスを返す
+                return response()->json([
+                    'products' => $products->items(),
+                    'pagination' => $products->links()->toHtml()
+                ]);
+            } else {
+                // 通常のリクエストの場合はビューを返す
+                $products = $query->paginate(10);
+                return view('products.index', ['products' => $products, 'companies' => $companies]);
+            }
         } catch (\Exception $e) {
             // エラーが発生した場合の処理
             return back()->withError($e->getMessage())->withInput();
@@ -293,7 +293,23 @@ class ProductController extends Controller
             if ($max_stock = $request->input('max_stock')) {
                 $query->where('stock', '<=', $max_stock);
             }
-    
+
+            // ソート条件の取得
+            $sortBy = $request->input('sort_by', 'id');
+            $sortOrder = $request->input('sort_order', 'asc');
+
+            // ソート条件の適用
+            if ($sortBy === 'company_name') {
+                // リレーションシップを使用して会社名でソート
+                $query->join('companies', 'products.company_id', '=', 'companies.id')
+                    ->orderBy('companies.company_name', $sortOrder)
+                    ->select('products.*', 'companies.company_name'); // 必要なカラムだけ選択;
+                    
+            } else {
+                // 他のカラムでソート
+                $query->orderBy($sortBy, $sortOrder);
+            }      
+
             // 関連する会社情報をロードし、ページネーションを適用して10件ごとに結果を取得
             $products = $query->with('company')->paginate(10);
     

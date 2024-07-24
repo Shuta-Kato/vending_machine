@@ -53,33 +53,38 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>id
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'id', 'direction' => 'asc']) }}">↑</a>
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'id', 'direction' => 'desc']) }}">↓</a>
+                    <th>
+                        id
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="id" data-sort-order="asc">↑</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="id" data-sort-order="desc">↓</button>
                     </th>
-                    <th>商品名
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'product_name', 'direction' => 'asc']) }}">↑</a>
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'product_name', 'direction' => 'desc']) }}">↓</a>
+                    <th>
+                        商品名
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="product_name" data-sort-order="asc">↑</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="product_name" data-sort-order="desc">↓</button>
                     </th>
-                    <th>メーカー
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'company_name', 'direction' => 'asc']) }}">↑</a>
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'company_name', 'direction' => 'desc']) }}">↓</a>
+                    <th>
+                        メーカー
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="company_name" data-sort-order="asc">↑</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="company_name" data-sort-order="desc">↓</button>
                     </th>
-                    <th>価格
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'price', 'direction' => 'asc']) }}">↑</a>
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'price', 'direction' => 'desc']) }}">↓</a>
+                    <th>
+                        価格
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="price" data-sort-order="asc">↑</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="price" data-sort-order="desc">↓</button>
                     </th>
-                    <th>在庫数
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'stock', 'direction' => 'asc']) }}">↑</a>
-                        <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['sort' => 'stock', 'direction' => 'desc']) }}">↓</a>
-                    </th>
+                    <th>
+                        在庫数
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="stock" data-sort-order="asc">↑</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm sort-link" data-sort-by="stock" data-sort-order="desc">↓</button>
+                    </th>                    
                     <th>画像</th>
                     <th>操作</th>
                 </tr>
             </thead>
             <tbody id="product-list">
                 @foreach($products as $product)
-                    <tr id="product-row-{{ $product->id }}"><!-- 各行にユニークなIDを追加 -->
+                    <tr id="product-row-{{ $product->id }}">
                         <td>{{ $product->id }}</td>
                         <td>{{ $product->product_name }}</td>
                         <td>{{ $product->company->company_name }}</td>
@@ -93,11 +98,11 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-info btn-sm mx-1">商品詳細</a>
+                            <a href="{{ route('products.show', $product->id) }}" class="btn btn-info">商品詳細</a>
                             <form id="delete-form-{{ $product->id }}" action="{{ route('products.destroy', $product->id) }}" method="POST" style="display: inline-block;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="button" class="btn btn-danger delete-btn" data-product-id="{{ $product->id }}" onclick="return confirm('本当に削除しますか？')">削除</button><!-- 削除ボタンにクラスとデータ属性を追加 -->
+                                <button type="button" class="btn btn-danger delete-btn" data-product-id="{{ $product->id }}" onclick="return confirm('本当に削除しますか？')">削除</button>
                             </form>
                         </td>
                     </tr>
@@ -105,11 +110,17 @@
             </tbody>
         </table>
 
-        {{ $products->appends(request()->query())->links() }}
+        <div id="pagination">
+            {{ $products->appends(request()->query())->links() }}
+        </div>
     </div>
 </div>
 
 <!-- jQueryとカスタムのsearch.jsスクリプトを含める -->
-<script src="{{ asset('build/assets/product-search-7ae7844f.js') }}"></script>
+<script src="{{ asset('build/assets/product-search-dbd32648.js') }}"></script>
+<script>
+    var sortUrl = "{{ route('products.search', ['product' => $products->first()->id]) }}";
+</script>
+
 
 @endsection
